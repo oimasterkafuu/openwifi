@@ -1,0 +1,20 @@
+# Build output
+build/
+*.exe
+*.obj
+*.pdb
+
+# IDE
+.vs/
+.vscode/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
