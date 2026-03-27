@@ -113,12 +113,14 @@ bool EnableModernHotspot() {
     std::wstring psCmd =
         L"powershell.exe -ExecutionPolicy Bypass -Command \""
         L"Add-Type -AssemblyName System.Runtime.WindowsRuntime; "
+        L"$null = [Windows.Networking.Connectivity.NetworkInformation,Windows.Networking.Connectivity,ContentType=WindowsRuntime]; "
+        L"$null = [Windows.Networking.NetworkOperators.NetworkOperatorTetheringManager,Windows.Networking.NetworkOperators,ContentType=WindowsRuntime]; "
         L"$profile = [Windows.Networking.Connectivity.NetworkInformation]::GetInternetConnectionProfile(); "
         L"if ($profile -eq $null) { exit 2 }; "
         L"$manager = [Windows.Networking.NetworkOperators.NetworkOperatorTetheringManager]::CreateFromConnectionProfile($profile); "
-        L"if ($manager.TetheringOperationalState -eq 'On') { exit 0 } "
+        L"if ($manager.TetheringOperationalState -eq 'On') { exit 0 }; "
         L"$op = $manager.StartTetheringAsync(); "
-        L"while ($op.Status -eq 0) { Start-Sleep -Milliseconds 200 }; "
+        L"while ($op.Status -eq 0) { Start-Sleep -Milliseconds 100 }; "
         L"if ($op.Status -ne 1) { exit 3 } else { exit 0 }\"";
 
     DWORD exitCode = 0;
