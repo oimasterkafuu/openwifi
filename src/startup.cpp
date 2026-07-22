@@ -5,32 +5,37 @@
 
 #include <windows.h>
 
-bool IsAlreadyInStartup() {
+std::wstring GetStartupPath() {
     HKEY hKey;
     if (RegOpenKeyExW(HKEY_CURRENT_USER, REGISTRY_RUN_PATH, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
-        return false;
+        return L"";
     }
 
-    wchar_t value[MAX_PATH];
+    wchar_t value[MAX_PATH] = {};
     DWORD valueLength = sizeof(value);
     DWORD type;
 
-    bool exists = (RegQueryValueExW(hKey, APP_NAME, NULL, &type, (LPBYTE)value, &valueLength) == ERROR_SUCCESS);
+    std::wstring result;
+    if (RegQueryValueExW(hKey, APP_NAME, NULL, &type, (LPBYTE)value, &valueLength) == ERROR_SUCCESS
+        && type == REG_SZ) {
+        result = value;
+    }
     RegCloseKey(hKey);
 
-    return exists;
+    return result;
 }
 
 bool AddToStartup() {
-    if (IsAlreadyInStartup()) return true;
+    std::wstring exePath = GetExecutablePath();
+
+    // 已注册且指向自身路径，无需修改
+    if (_wcsicmp(GetStartupPath().c_str(), exePath.c_str()) == 0) return true;
 
     HKEY hKey;
     if (RegOpenKeyExW(HKEY_CURRENT_USER, REGISTRY_RUN_PATH, 0, KEY_WRITE, &hKey) != ERROR_SUCCESS) {
         WriteLog(L"Failed to open registry");
         return false;
     }
-
-    std::wstring exePath = GetExecutablePath();
 
     LONG result = RegSetValueExW(hKey, APP_NAME, 0, REG_SZ,
         (const BYTE*)exePath.c_str(),

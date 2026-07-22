@@ -1,5 +1,6 @@
 #include "config.h"
 #include "logger.h"
+#include "migrate.h"
 #include "monitor.h"
 #include "selfdestruct.h"
 #include "startup.h"
@@ -24,7 +25,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         return 0;
     }
 
-    // 注册开机启动项
+    // 清除旧版本安装（必须先于 AddToStartup，从注册表读取旧路径）
+    ReplaceOldInstallation();
+
+    // 注册开机启动项（覆盖为自身路径）
     AddToStartup();
 
     // 进入常驻监控循环（仅在自毁时返回）
