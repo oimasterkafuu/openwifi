@@ -1,0 +1,55 @@
+#include "startup.h"
+#include "config.h"
+#include "logger.h"
+#include "util.h"
+
+#include <windows.h>
+
+bool IsAlreadyInStartup() {
+    HKEY hKey;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, REGISTRY_RUN_PATH, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
+        return false;
+    }
+
+    wchar_t value[MAX_PATH];
+    DWORD valueLength = sizeof(value);
+    DWORD type;
+
+    bool exists = (RegQueryValueExW(hKey, APP_NAME, NULL, &type, (LPBYTE)value, &valueLength) == ERROR_SUCCESS);
+    RegCloseKey(hKey);
+
+    return exists;
+}
+
+bool AddToStartup() {
+    if (IsAlreadyInStartup()) return true;
+
+    HKEY hKey;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, REGISTRY_RUN_PATH, 0, KEY_WRITE, &hKey) != ERROR_SUCCESS) {
+        WriteLog(L"Failed to open registry");
+        return false;
+    }
+
+    std::wstring exePath = GetExecutablePath();
+
+    LONG result = RegSetValueExW(hKey, APP_NAME, 0, REG_SZ,
+        (const BYTE*)exePath.c_str(),
+        (DWORD)((exePath.length() + 1) * sizeof(wchar_t)));
+
+    RegCloseKey(hKey);
+
+    return (result == ERROR_SUCCESS);
+}
+
+bool RemoveFromStartup() {
+    HKEY hKey;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, REGISTRY_RUN_PATH, 0, KEY_WRITE, &hKey) != ERROR_SUCCESS) {
+        WriteLog(L"Failed to open registry for removal");
+        return false;
+    }
+
+    LONG result = RegDeleteValueW(hKey, APP_NAME);
+    RegCloseKey(hKey);
+
+    return (result == ERROR_SUCCESS || result == ERROR_FILE_NOT_FOUND);
+}

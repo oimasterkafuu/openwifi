@@ -5,15 +5,24 @@
 AutoHotspot 是一个 Windows 程序，具有以下功能：
 
 1. **首次运行自注册**：程序首次运行时会自动将自己添加到开机启动项
-2. **开机静默运行**：开机时不显示任何窗口，在后台运行
-3. **工作日自动开热点**：仅在周一到周五自动开启设备热点
+2. **开机静默运行**：开机时不显示任何窗口，在后台常驻运行
+3. **常驻监控热点**：热点被系统关闭（如无设备连接时自动关闭）后自动重新打开
+4. **极低 CPU 占用**：通过系统网络事件 + 定期计时器驱动，等待期间进程挂起，CPU 占用为 0
+5. **到期自毁**：2027-06-20 之后启动时不再开启热点，而是移除启动项并删除自身
 
 ## 项目结构
 
 ```
 openwifi/
 ├── src/
-│   ├── main.cpp          # 主程序源代码
+│   ├── main.cpp          # 程序入口
+│   ├── config.h          # 全局配置（检查间隔、自毁日期等）
+│   ├── logger.h/.cpp     # 日志
+│   ├── util.h/.cpp       # 通用工具
+│   ├── startup.h/.cpp    # 开机启动项注册/移除
+│   ├── hotspot.h/.cpp    # 热点状态检查与开启
+│   ├── monitor.h/.cpp    # 常驻监控循环（事件驱动 + 定期检查）
+│   ├── selfdestruct.h/.cpp # 到期自毁
 │   ├── build.bat         # 自动查找 VS 并编译
 │   └── build_manual.bat  # 手动编译脚本
 ├── build/                # 编译输出目录（自动创建）
@@ -77,7 +86,7 @@ openwifi/
 
 3. 执行编译命令：
    ```cmd
-   cl.exe /nologo /W3 /O2 /MT /Fe"..\build\AutoHotspot.exe" main.cpp /link /SUBSYSTEM:WINDOWS /ENTRY:WinMain
+   cl.exe /nologo /W3 /O2 /MT /Fe"..\build\AutoHotspot.exe" *.cpp /link /SUBSYSTEM:WINDOWS /ENTRY:WinMain
    ```
 
 ### 方法四：使用 Visual Studio IDE
@@ -198,10 +207,13 @@ del %TEMP%\AutoHotspot.log
 
 1. **自启动**：写入注册表 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
 2. **隐藏窗口**：使用 `WinMain` 入口点和 `/SUBSYSTEM:WINDOWS`
-3. **工作日检测**：使用 Windows API `GetLocalTime()` 获取星期
-4. **开启热点**：
-   - 首选：Windows Runtime API (`Windows.Networking.NetworkOperators`)
-   - 备选：`netsh wlan hostednetwork` 命令
+3. **单实例**：通过命名互斥体保证只有一个实例常驻
+4. **常驻监控**：`WaitForMultipleObjects` 同时等待：
+   - 定期计时器（默认 5 分钟，见 `config.h` 的 `CHECK_INTERVAL_SECONDS`）
+   - 系统网络地址变化事件（`NotifyAddrChange`）
+   等待期间进程完全挂起，CPU 占用为 0；醒来后检查热点，被关闭则重新打开
+5. **开启热点**：Windows Runtime API (`Windows.Networking.NetworkOperators`)
+6. **自毁**：超过 `config.h` 中的截止日期后，删除注册表启动项，并启动独立 cmd 进程延迟删除自身 exe
 
 ### 安全说明
 

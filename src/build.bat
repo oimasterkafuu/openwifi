@@ -46,7 +46,7 @@ if not exist "..\build" mkdir "..\build"
 echo [信息] 开始编译...
 echo.
 
-cl.exe /nologo /W3 /O2 /MT /Fe"..\build\AutoHotspot.exe" main.cpp /link /SUBSYSTEM:WINDOWS /ENTRY:WinMain
+cl.exe /nologo /W3 /O2 /MT /Fe"..\build\AutoHotspot.exe" *.cpp /link /SUBSYSTEM:WINDOWS /ENTRY:WinMain
 
 if errorlevel 1 (
     echo.
