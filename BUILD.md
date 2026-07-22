@@ -23,6 +23,7 @@ openwifi/
 │   ├── hotspot.h/.cpp    # 热点状态检查与开启
 │   ├── monitor.h/.cpp    # 常驻监控循环（事件驱动 + 定期检查）
 │   ├── migrate.h/.cpp    # 旧版本检测与清除
+│   ├── silent.h/.cpp     # 静默模式（禁止一切错误弹窗）
 │   ├── selfdestruct.h/.cpp # 到期自毁
 │   ├── build.bat         # 自动查找 VS 并编译
 │   └── build_manual.bat  # 手动编译脚本

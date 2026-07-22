@@ -3,11 +3,15 @@
 #include "migrate.h"
 #include "monitor.h"
 #include "selfdestruct.h"
+#include "silent.h"
 #include "startup.h"
 
 #include <windows.h>
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+    // 最优先：进入完全静默模式，任何错误都不允许弹窗
+    EnterSilentMode();
+
     WriteLog(L"=== Program Start ===");
 
     // 超过自毁日期：不开热点，直接自毁
